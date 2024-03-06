@@ -1,0 +1,494 @@
+---
+title: "Morphological Measurements On Leptograspus Crabs"
+author: "Gema Martínez Sánchez"
+date: "2023-11-27"
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = FALSE, eval=TRUE)
+```
+##Introduction  
+
+The rock crab Leptograpsus variegatus (Fabricius, 1793), is recorded as occurring
+on a number of southern Pacific islands, the western coast of South America, and the
+coasts of Australia south of the Tropic of Capricorn (Balss 1935; Griffin 1969).
+Mahon (1973), using ecological studies which extended those of Shield (1959), and
+a genetical analysis based on an electrophoretic study, established the specific distinctness of rock crabs of the blue and orange forms of the genus Leptograpsus which occur on the coasts of Australia. These colour forms were previously regarded as morphs of L. variegatus (Shield 1959; Griffin 1973).  
+
+The conclusion that the two colour forms are indeed two separate species has
+made it necessary to examine the extant type material of all the taxa previously placed in the synonymy of L. vauiegatus. This is necessary to determine whether any of these taxa are available for the two Western Australian species; the types of L. variegatus itself are apparently lost (Rathbun 1918). However, leptograpsid crabs which have been chemically preserved lose their distinguishing colour.
+In an attempt to resolve this problem of identification, a morphological study of the Western Australian species was undertaken.    
+
+In this study, 200 animals (50 males and 50 females of each colour form) were collected at Fremantle, W.A. (32"S., 117"E.). All samples were collected and measured by one of the authors (R.J.M.). Samples were collected at night, animals being captured on sight, as the collector moved along the sample area. Measurements taken were: **(1)** the width of the frontal region (lip) of the carapace, just anterior to the front tubercles **(FL)**; **(2)** the width of the posterior region of the carapace (rear width **RW**); **(3)** the length of the carapace, along the midline **(CL)**; **(4)** the maximum width of the carapace **(CW)**; **(5)** the depth of the body measured after displacement of the abdomen (only necessary for females) **(BD)**. Measurements were made with vernier calipers, to the nearest 0.1 mm.  
+
+image: ![](C:/Users/TOSHIBA/OneDrive/Documentos/Advanced Bachelor in Bioinformatics/ADVBABIT 08 Data analysis, visualization and biostatistics using R/Project/Leptograspus)  
+
+##Exploration of dataset
+```{r, crabs,echo=FALSE, eval=TRUE}
+setwd("C:/Users/TOSHIBA/OneDrive/Documentos/Advanced Bachelor in Bioinformatics/ADVBABIT 08 Data analysis, visualization and biostatistics using R/Project")
+crabs <- read.csv(file="crabs.csv", header=TRUE)
+```
+
+First of all, we need to do a quick exploration on the data we have, to know the mean, maximums, minimums, type of variables, among others.
+```{r, str_crabs,echo=FALSE, eval=TRUE}
+str(crabs)
+```
+
+```{r summary_crabs, echo=FALSE, eval=TRUE}
+summary(crabs)
+```
+Additionally, it will be very useful to see the proportions of the variables sex and specie in the dataset
+```{r crabs_factor, echo=FALSE, eval=TRUE}
+#Change qualitative data and converto to factor
+crabs$sp <- as.factor(gsub("B", "Blue", crabs$sp))
+crabs$sp <- as.factor(gsub("O", "Orange", crabs$sp))
+crabs$sex <- as.factor(gsub("M", "Male", crabs$sex))
+crabs$sex <- as.factor(gsub("F", "Female", crabs$sex))
+sp.freq <- table(crabs$sp)
+sex.freq <- table(crabs$sex)
+
+#Piechart
+pie(sp.freq, labels=rep("", length(sp.freq)), col=c("#225EA8","#EC7014"))
+mtext("Proportion of each specie", font=4)
+legend("left", legend=c("Blue","Orange"), title="Species", col=c("#225EA8","#EC7014"), fill=c("#225EA8","#EC7014"), inset=0)
+
+pie(sex.freq, labels=rep("", length(sex.freq)), col=c("turquoise","pink"))
+mtext("Proportion of each gender", font=4)
+legend("left", legend=c("Male","Female"), title="Gender", col=c("turquoise","pink"), fill=c("turquoise","pink"), inset=0)
+```
+On these two pie charts we can see we have a proportion of 50/50 for blue and orange crabs and for each type of crab we have 50/50 proportion of male and female specimens.
+Regarding the numeric variables, we are going to analize each of them separately.
+
+#Frontal lobe size
+As it is a numerical value, a histogram as been created showing the density of the variable data
+``` {r crabs_histogram1, echo=FALSE, eval=TRUE}
+#Create histograms for the quantitative varieties
+library(ggplot2)
+library(tidyverse)
+library(hrbrthemes)
+#Front lobe size histogram
+ggplot(data=crabs,aes(x=crabs$FL))+geom_histogram(aes(y=..density..), binwidth=1, fill="#69b1a8", color="#e9ecef", alpha=0.9)+ xlab("Size (mm)")+xlim(5,26)+ylab("Density")+ ggtitle("Frontal lobe size histogram")+theme(plot.title = element_text(hjust=0.5))+geom_density(col="red")+theme_bw()
+library(moments)
+kurtosis(crabs$FL)
+skewness(crabs$FL)
+```
+We can see that the graphic is leptokurtic, with a mean frontal lobe size of 15 mm.
+In order to better check if the data follow a normal distribution, a quantile-quantile plot has been created
+``` {r crabs_qqplot1, echo=FALSE, eval=TRUE}
+par(mfrow=c(1,1))
+#QQplot
+qqnorm(crabs$FL, col="#69b1a8", pch=17)
+qqline(crabs$FL, col="red", lwd=2)
+#Shapiro test
+shapiro.test(crabs$FL)
+```
+If we analyze the quantile-quantile plot, we can see that the data is more or less adjusted to the normal line colored in red so the data for the frontal lobe size follows a normal distribution. To support this results I have performed a Shapiro-Wilk test and the results show a p-value greater than 0.05 so this support our hypothesis or normality of the data.
+#Rear width
+``` {r crabs_histogram2, echo=FALSE, eval=TRUE}
+#Rear width histogram
+ggplot(data=crabs,aes(x=crabs$RW)) + geom_histogram(aes(y=..density..), binwidth=1, fill="#778811", color="#e9ecef", alpha=0.9)+ xlab("Width (mm)")+xlim(4,23)+ylab("Density")+ ggtitle("Rear width histogram")+theme(plot.title = element_text(hjust=0.5))+geom_density(col="red")+theme_bw()
+kurtosis(crabs$RW)
+skewness(crabs$RW)
+```
+For the rear width, the histogram has two peaks,with a mean value around 12mm.Kurtosis is greater than cero as well as skewness so that means that the distribution is leptokurtic. The next step is checking the qqplot and p-value of the Shapiro test to have a better idea about how rear width data is distributed.
+``` {r crabs_qqplot2, echo=FALSE, eval=TRUE}
+par(mfrow=c(1,1))
+#QQplot
+qqnorm(crabs$RW, col="#778811", pch=13)
+qqline(crabs$RW, col="red", lwd=2)
+#Shapiro test
+shapiro.test(crabs$RW)
+```
+Seeing this results I can prove I was wrong as the distribution of data for this variable is adjusted more to normality than the data for frontal lobe size. If we compare the qqplots,the data for rear width is distributed closed to the red line and also the p-value for Shapiro test is higher, meaning more evidence supporting the null hypothesis (H0= normal distribution of data).
+#Carapace length
+``` {r crabs_histogram3, echo=FALSE, eval=TRUE}
+#Carapace length histogram
+par(mfrow=c(1,1))
+ggplot(data=crabs,aes(x=crabs$CL)) + geom_histogram(aes(y=..density..), binwidth=2, fill="#881133", color="#e9ecef", alpha=0.9)+ xlab("Length (mm)")+xlim(10,52)+ylab("Density")+ ggtitle("Carapace length histogram")+theme(plot.title = element_text(hjust=0.5))+geom_density(col="red")+theme_bw()
+kurtosis(crabs$CL)
+skewness(crabs$CL)
+```
+The histogram shows the data distributed almost normally, as the shape of the density line looks similar to a gauss curve.The distribution is leptokurtic as the kurtosis value is greater than cero but the skewness in this case is negative, meaning that the distribution has a left skew, as we can easily see in the histogram.
+``` {r crabs_qqplot3, echo=FALSE, eval=TRUE}
+par(mfrow=c(1,1))
+#QQplot
+qqnorm(crabs$CL, col="#881133", pch=8)
+qqline(crabs$CL, col="red", lwd=2)
+#Shapiro test
+shapiro.test(crabs$CL)
+```
+As the qqplot and shapiro test, carapace length data follows a normal distribution, as the p-value is again greater than 0.05. Data is more adjusted to the red line than for the frontal lobe size, for example, although the data of this one is still normally distributed.
+#Carapace width
+``` {r crabs_histogram4, echo=FALSE, eval=TRUE}
+#Carapace width histogram
+ggplot(data=crabs,aes(x=crabs$CW)) + geom_histogram(aes(y=..density..), binwidth=3, fill="pink2", color="#e9ecef", alpha=0.9)+ xlab("Width (mm)")+xlim(13,58)+ylab("Density")+ ggtitle("Carapace width histogram")+theme(plot.title = element_text(hjust=0.5))+geom_density(col="red")+theme_bw()
+kurtosis(crabs$CW)
+skewness(crabs$CW)
+```
+Carapace width data seems to follow a normal distribution, with a mean value around 36 mm. The distribution is leptokurtic with a left skew similar to the carapace length histogram.
+``` {r crabs_qqplot4, echo=FALSE, eval=TRUE}
+par(mfrow=c(1,1))
+#QQplot
+qqnorm(crabs$CW, col="pink2", pch=18)
+qqline(crabs$CW, col="red", lwd=2)
+#Shapiro test
+shapiro.test(crabs$CW)
+```
+Similar to the rest of variables, the qqplot and shapiro test shows that the carapace width data is distributed normally.
+#Body depth
+``` {r crabs_histogram5, echo=FALSE, eval=TRUE}
+#Body depth histogram
+ggplot(data=crabs,aes(x=crabs$BD)) + geom_histogram(aes(y=..density..), binwidth=1, fill="orange2", color="#e9ecef", alpha=0.9)+ xlab("Depth (mm)")+xlim(3,24)+ylab("Density")+ ggtitle("Body depth histogram")+theme(plot.title = element_text(hjust=0.5))+geom_density(col="red")+theme_bw()
+kurtosis(crabs$BD)
+skewness(crabs$BD)
+```
+The body depth histogram shows a leptokurtic distribution with a right skew. The data could have a normal distribution, so we check again creating a qqplot and running a shapiro-test to make sure this is true.
+``` {r crabs_qqplot5, echo=FALSE, eval=TRUE}
+par(mfrow=c(1,1))
+#QQplot
+qqnorm(crabs$BD, col="orange2", bg="orange2", pch=23)
+qqline(crabs$BD, col="red", lwd=2)
+#Shapiro test
+shapiro.test(crabs$BD)
+```
+The evidence for normality of data is weaker this time, as the shapiro test p-value has a lower value if you compare it to the rest of variables, but it is still greater than 0.05, so we still can say that the data is distributed normally. Qqplot also shows that the data is not so adjusted to the normal line.
+
+#Pairwise comparison of variables
+
+Once we have check the normality of the data, it is need to do a pairwise comparison between the variables to see how they are related to each other. First we are going to create a scatterplot matrix by specie to see the pairwise comparison of all variables at the same time, coloured by specie.
+``` {r crabs_scatter_byspecie, echo=FALSE, eval=TRUE}
+#Scatterplot matrix of quatitative variables
+##Coloured by specie
+###Create crabs.pch and crabs.col to associate a shape and colour to each level of the column sp
+crabs.pch <- crabs$sp
+levels(crabs.pch) <- list("0"="Blue", "1"="Orange")
+crabs.pch <- as.numeric(as.character(crabs.pch))
+crabs.col <- crabs$sp
+levels(crabs.col) <- list("#225EA8"="Blue", "#EC7014"="Orange")
+crabs.col <- as.character(crabs.col)
+par(mar=c(5,4,2,1))
+pairs(crabs[5:9], cex=0.7, pch=crabs.pch, col=crabs.col)
+par(xpd=TRUE)
+mtext("Scatterplot matrix of quantiative variables", side=3, line=1, font=2, family="serif")
+legend("topleft", title ="Species", cex=0.8, legend=c("Blue", "Orange"), col=c("#225EA8", "#EC7014"), fill=c("#225EA8", "#EC7014"), inset=-0.06)
+```
+Here we an see that all variables have a positive correlation, so that means when, for example, carapace width increases, so does body depth.We don't have separation by gender, as it has been done only by specie.  If we pay attention to the different species, in some scatterplots they are overlapped, showing that there is no difference between species. But in some others, there is minimal overlapping, so this clearly needs further investigation.
+Another interesting thing is that in some scatterplots as, for example, rear width vs carapace length, we can see that the blue specie has been separated in two groups, as well as the orange specie, so this means that maybe there are some differences between gender, but we cannot see them well in this scatterplot. For this reason, it is necessary to create a scatterplot matrix by gender.
+``` {r crabs_scatter_bygender, echo=FALSE, eval=TRUE}
+#Scatterplot matrix of quatitative variables
+##Coloured by gender
+###Create crabs.pch1 and crabs.col1 to associate a shape and colour to each level of the column sex
+crabs.pch1 <- crabs$sex
+levels(crabs.pch1) <- list("2"="Male", "3"="Female")
+crabs.pch1 <- as.numeric(as.character(crabs.pch1))
+crabs.col1 <- crabs$sex
+levels(crabs.col1) <- list("turquoise"="Male", "pink"="Female")
+crabs.col1 <- as.character(crabs.col1)
+par(mar=c(5,4,2,1))
+pairs(crabs[5:9], cex=0.7, pch=crabs.pch1, col=crabs.col1)
+par(xpd=TRUE)
+mtext("Scatterplot matrix of quantiative variables", side=3, line=1, font=2, family="serif")
+legend("topleft", title ="Sex", cex=0.8, legend=c("Male", "Female"), col=c("turquoise", "pink"), fill=c("turquoise", "pink"), inset=-0.06)
+```
+Similarly to the scatterplot matrix by specie, this scatterplot matrix by gender has a positive correlation in all scatterplots and we also see that some of the scatterplots that show overlapping by specie, do not show overlapping by gender, so this could help to differentiate crabs gender, although this is not the purpose of this investigation. For example, if we pay attention to rear width vs carapace length, in the previous scatterplot we saw two different groups within the blue species but in this scatterplot, we do not see a distinction within the same gender in any of the two genders but the two genders have minimal overlapping. This could mean that there are some differences in either rear width or carapace length by gender but not by specie. This needs further investigation through statistical analysis.
+``` {r crabs_pairwiseqqplot1, echo=FALSE, eval=TRUE}
+#Change the variables crabs.col and crabs.col1 to the original values of the columns sp and sex to differentiate data points from each group
+crabs.col <-crabs$sp
+crabs.col1 <- crabs$sex
+#Pairwise qqplot
+ggplot(data=crabs, aes(x=CL, y=CW))+geom_point(mapping=aes(color=crabs.col), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Length (mm)", y="Width (mm)")+ ggtitle("Carapace length vs width")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+ scale_color_manual(name="Species", values = c("Blue"="#225EA8","Orange"="#EC7014")) 
+ggplot(data=crabs, aes(x=CL, y=CW))+geom_point(mapping=aes(color=crabs.col1), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Length (mm)", y="Width (mm)")+ ggtitle("Carapace length vs width")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+ scale_color_manual(name = "Gender", values = c("Male" = "turquoise", "Female" = "pink"))
+```
+If we compare carapace length with carapace width we can see that there is a positive correlation between them, adjusted to the regression line in red for both species and genders.All the data seem to have the same variation in both scatterplots but the two species seem to appear separated, so it would be interesting to check if there is any significant difference between both.
+``` {r crabs_pairwiseqqplot2, echo=FALSE, eval=TRUE}
+ggplot(data=crabs, aes(x=FL, y=RW))+geom_point(mapping=aes(color=crabs.col), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Size (mm)", y="Width (mm)")+ ggtitle("Front lobe size vs Rear width")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+ scale_color_manual(name = "Species", values = c("Blue" = "#225EA8", "Orange" = "#EC7014"))
+ggplot(data=crabs, aes(x=FL, y=RW))+geom_point(mapping=aes(color=crabs.col1), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Size (mm)", y="Width (mm)")+ ggtitle("Front lobe size vs Rear width")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+ scale_color_manual(name = "Gender", values = c("Male" = "turquoise", "Female" = "pink"))
+```
+Regarding front lobe size versus rear width, we still see a possitive correlation but not so adjusted to the regression line, some points are closer than others, so in this case would be interesting to check homocedasticity with a Barlett's test. Also, it seems that there is no difference between species but it has it for genders. If this is true, could help to identificate males from females although this is not the purpose of the study.
+``` {r crabs_pairwiseqqplot3, echo=FALSE, eval=TRUE}
+ggplot(data=crabs, aes(x=CL, y=BD))+geom_point(mapping=aes(color=crabs.col), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Length (mm)", y="Depth (mm)")+ ggtitle("Carapace length vs body depth")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+ scale_color_manual(name="Species", values = c("Blue"="#225EA8","Orange"="#EC7014")) 
+ggplot(data=crabs, aes(x=CL, y=BD))+geom_point(mapping=aes(color=crabs.col1), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Length (mm)", y="Depth (mm)")+ ggtitle("Carapace length vs Body depth")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Gender", values = c("Male" = "turquoise", "Female" = "pink"))
+```
+Similarly to carapace length versus width, we see the two species separated but not the two genders, with a high homocedasticity in both scatteplots.
+``` {r crabs_pairwiseqqplot4, echo=FALSE, eval=TRUE}
+ggplot(data=crabs, aes(x=CW, y=BD))+geom_point(mapping=aes(color=crabs.col), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Width (mm)", y="Depth (mm)")+ ggtitle("Carapace width vs body depth")+ theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Species", values = c("Blue" = "#225EA8", "Orange" = "#EC7014"))
+ggplot(data=crabs, aes(x=CW, y=BD))+geom_point(mapping=aes(color=crabs.col1), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Width (mm)", y="Depth (mm)")+ ggtitle("Carapace width vs body depth")+ theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Gender", values = c("Male" = "turquoise", "Female" = "pink"))
+```
+If we compare with the previous scatteplots, we again see difference between species but not any difference between genders, so body depth and carapace dimensions seems to be implicated in the distinction of the blue and the orange species.
+``` {r crabs_pairwiseqqplot5, echo=FALSE, eval=TRUE}
+ggplot(data=crabs, aes(x=RW, y=BD))+geom_point(mapping=aes(color=crabs.col), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Width (mm)", y="Depth (mm)")+ ggtitle("Rear width vs Body depth")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Species", values = c("Blue" = "#225EA8", "Orange" = "#EC7014"))
+ggplot(data=crabs, aes(x=RW, y=BD))+geom_point(mapping=aes(color=crabs.col1), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Width (mm)", y="Depth (mm)")+ ggtitle("Rear width vs Body depth")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Gender", values = c("Male" = "turquoise", "Female" = "pink"))
+```
+Here we have the opposite case comparing to the last scatterplots. Heterocedasticity is high and we cannot see differences between species but we see them between genders, so it is possible that rear width has something to do with gender differenciation, as we saw the same result when we compared front lobe size versus rear width.
+``` {r crabs_pairwiseqqplot6, echo=FALSE, eval=TRUE}
+ggplot(data=crabs, aes(x=FL, y=BD))+geom_point(mapping=aes(color=crabs.col), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="size (mm)", y="Depth (mm)")+ ggtitle("Frontal lobe size vs Body depth")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Species", values = c("Blue" = "#225EA8", "Orange" = "#EC7014"))
+ggplot(data=crabs, aes(x=FL, y=BD))+geom_point(mapping=aes(color=crabs.col1), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="size (mm)", y="Depth (mm)")+ ggtitle("Frontal lobe size vs Body depth")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Gender", values = c("Male" = "turquoise", "Female" = "pink"))
+```
+These two scatterplots have a high homocedasticity, as the points seem to have the same standard deviation. In this case we do not see any differences between species neither genders.
+``` {r crabs_pairwiseqqplot7, echo=FALSE, eval=TRUE}
+ggplot(data=crabs, aes(x=CW, y=RW))+geom_point(mapping=aes(color=crabs.col), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Width (mm)", y="Width (mm)")+ ggtitle("Carapace width vs Rear width")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Species", values = c("Blue" = "#225EA8", "Orange" = "#EC7014"))
+ggplot(data=crabs, aes(x=CW, y=RW))+geom_point(mapping=aes(color=crabs.col1), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Width (mm)", y="Width (mm)")+ ggtitle("Carapace width vs Rear width")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Gender", values = c("Male" = "turquoise", "Female" = "pink"))
+```
+For carapace width vs rear width, there is no differences between species but there is for gender. This sustent the growing evidence that rear width has something to do with gender differentiation. Also, there is a high heterocedasticity due to the high difference between standard deviation of the data.
+``` {r crabs_pairwiseqqplot8, echo=FALSE, eval=TRUE}
+ggplot(data=crabs, aes(x=FL, y=CW))+geom_point(mapping=aes(color=crabs.col), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Size (mm)", y="Width (mm)")+ ggtitle("Frontal lobe size vs Carapace width")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Species", values = c("Blue" = "#225EA8", "Orange" = "#EC7014"))
+ggplot(data=crabs, aes(x=FL, y=CW))+geom_point(mapping=aes(color=crabs.col1), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Size (mm)", y="Width (mm)")+ ggtitle("Frontal lobe size vs Carapace width")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Gender", values = c("Male" = "turquoise", "Female" = "pink"))
+```
+Here we can see that homocedasticity is more or less good in the two scatteplots, and differences in data regarding to species, whereas we cannot find any differences between males and females.
+``` {r crabs_pairwiseqqplot9, echo=FALSE, eval=TRUE}
+ggplot(data=crabs, aes(x=CL, y=RW))+geom_point(mapping=aes(color=crabs.col), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Length (mm)", y="Width (mm)")+ ggtitle("Carapace length vs Rear width")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Species", values = c("Blue" = "#225EA8", "Orange" = "#EC7014"))
+ggplot(data=crabs, aes(x=CL, y=RW))+geom_point(mapping=aes(color=crabs.col1), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Length (mm)", y="Width (mm)")+ ggtitle("Carapace length vs Rear width")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Gender", values = c("Male" = "turquoise", "Female" = "pink"))
+```
+Comparing to the last scatterplots, these two are the opposite, homocedasticity is bad, data is too spread out although it has a positive correlation. The difference is that whereas the two species are overlapped, this is not happening for male and female groups, where we can clearly see a distinction between these two groups.
+``` {r crabs_pairwiseqqplot10, echo=FALSE, eval=TRUE}
+ggplot(data=crabs, aes(x=FL, y=CL))+geom_point(mapping=aes(color=crabs.col), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Length (mm)", y="Length (mm)")+ ggtitle("Frontal lobe length vs Carapace length")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Species", values = c("Blue" = "#225EA8", "Orange" = "#EC7014"))
+ggplot(data=crabs, aes(x=FL, y=CL))+geom_point(mapping=aes(color=crabs.col1), shape=16, position="jitter")+geom_smooth(method="lm", se=FALSE, color="red", linewidth=1)+labs(x="Length (mm)", y="Length (mm)")+ ggtitle("Frontal lobe length vs Carapace length")+theme(plot.title=element_text(hjust=0.5))+theme_gray()+scale_color_manual(name = "Gender", values = c("Male" = "turquoise", "Female" = "pink"))
+```
+Homocedasticity is really good in this case, as datapoints seem to have the same standard deviation. Here we can appreciate differences between blue and orange crabs for these two variables, but any difference between male and female data.
+
+Once we have compared all the variables in all the possible combinations to analyze the data, we can conclude the following:
+-**Carapace length and carapace width** have always a good homocedasticity, meaning that the regression model provides strong conclusions and predictions. Also, these variables might be useful to differenciate the blue leptograspus crab from the orange one, as all the scatterplots related to them showed a clear differentiation between species.
+-**Rear width** could be useful to differenciate a male leptograspus crab from a female one, but this is not so clear, as the homocedasticity here is bad
+-**Frontal lobe size and body depth** do not seem to be related to gender or specie and the homocedasticity for them is good
+
+These scatterplots are very useful to understand how variables are related, but the conclusions need further investigation through statistical analysis in order to make such assumptions.
+
+#Principal Component Analysis (PCA)
+Due to the amount of variables to compare, it is useful to reduce dimensionality of the dataset using Principal Component Analysis (PCA). Th eprincipal components are ordered by decreasing amount of variance, as we can see in the following plot.
+``` {r crabs_PCA, echo=FALSE, eval=TRUE}
+#Log transformation of the data
+crabs.log <- log(crabs[,5:9])
+#Apply PCA
+crabs.pca <- prcomp(crabs.log, center=TRUE, scale=TRUE)
+#Have a look at the computed PCs
+print(crabs.pca)
+summary(crabs.pca)
+#Create a plot for PCs
+plot(crabs.pca, type="l")
+```
+As we can see in the plot. the biggest part of the variance and standard deviation is in the first principal component (PC1) and if we pay attention to the PCA analysis, we can see that the first principal component is mainly affected by carapace length, carapace width and front lobe size but there is not so many difference with the contribution of body depth and rear width. This is partially in consonance with our theory of carapace length and width as the main variables that could serve as an indicator to separate blue and orange leptograspus crabs into different species.
+Let's have a look at the pairwise PCA plots by specie and by gender to check if we can see differences between groups.
+
+##PCAs by specie
+
+``` {r crabs_PCA_byspecie, echo=FALSE, eval=TRUE}
+#PCAs by specie
+plot(crabs.pca$x[,1:2], col=c("#225EA8", "#EC7014"),pch=16)
+legend("topleft", title = "Species", legend = c("Blue", "Orange"), col = c("#225EA8", "#EC7014"), pch = 16)
+plot(crabs.pca$x[,c(1,3)], col=c("#225EA8", "#EC7014"), pch = 16)
+legend("topleft", title = "Species", legend = c("Blue", "Orange"), col = c("#225EA8", "#EC7014"), pch = 16)
+plot(crabs.pca$x[,c(1,4)], col=c("#225EA8", "#EC7014"), pch = 16)
+legend("topleft", title = "Species", legend = c("Blue", "Orange"), col = c("#225EA8", "#EC7014"), pch = 16)
+plot(crabs.pca$x[,c(1,5)], col=c("#225EA8", "#EC7014"), pch = 16)
+legend("topleft", title = "Species", legend = c("Blue", "Orange"), col = c("#225EA8", "#EC7014"), pch = 16)
+plot(crabs.pca$x[,c(2,3)], col=c("#225EA8", "#EC7014"), pch = 16)
+legend("topleft", title = "Species", legend = c("Blue", "Orange"), col = c("#225EA8", "#EC7014"), pch = 16)
+plot(crabs.pca$x[,c(2,4)], col=c("#225EA8", "#EC7014"), pch = 16)
+legend("topleft", title = "Species", legend = c("Blue", "Orange"), col = c("#225EA8", "#EC7014"), pch = 16)
+plot(crabs.pca$x[,c(2,5)], col=c("#225EA8", "#EC7014"), pch = 16)
+legend("topleft", title = "Species", legend = c("Blue", "Orange"), col = c("#225EA8", "#EC7014"), pch = 16)
+plot(crabs.pca$x[,c(3,4)], col=c("#225EA8", "#EC7014"), pch = 16)
+legend("topleft", title = "Species", legend = c("Blue", "Orange"), col = c("#225EA8", "#EC7014"), pch = 16)
+plot(crabs.pca$x[,c(3,5)], col=c("#225EA8", "#EC7014"), pch = 16)
+legend("topleft", title = "Species", legend = c("Blue", "Orange"), col = c("#225EA8", "#EC7014"), pch = 16)
+plot(crabs.pca$x[,c(4,5)], col=c("#225EA8", "#EC7014"), pch = 16)
+legend("topleft", title = "Species", legend = c("Blue", "Orange"), col = c("#225EA8", "#EC7014"), pch = 16)
+```
+As we can see, in any of the PCAs we can see differences by specie, all points from the two species appear mixed, but in the plot PC3 vs PC1, we can appreciate two groups of points although the data points from the two species are mixed. This could mean that there is something we are not seeing in 2d, so it would be interesting to create 3d plots.
+
+##PCAs by gender
+
+``` {r crabs_PCA_bygender, echo=FALSE, eval=TRUE}
+#PCAs by gender
+plot(crabs.pca$x[,1:2], col=c("turquoise", "pink"), pch = 16)
+legend("topleft", title = "Species", legend = c("Male", "Female"), col = c("turquoise", "pink"), pch = 16)
+plot(crabs.pca$x[,c(1,3)], col=c("turquoise", "pink"), pch = 16)
+legend("topleft", title = "Species", legend = c("Male", "Female"), col = c("turquoise", "pink"), pch = 16)
+plot(crabs.pca$x[,c(1,4)], col=c("turquoise", "pink"), pch = 16)
+legend("topleft", title = "Species", legend = c("Male", "Female"), col = c("turquoise", "pink"), pch = 16)
+plot(crabs.pca$x[,c(1,5)], col=c("turquoise", "pink"), pch = 16)
+legend("topleft", title = "Species", legend = c("Male", "Female"), col = c("turquoise", "pink"), pch = 16)
+plot(crabs.pca$x[,c(2,3)], col=c("turquoise", "pink"), pch = 16)
+legend("topleft", title = "Species", legend = c("Male", "Female"), col = c("turquoise", "pink"), pch = 16)
+plot(crabs.pca$x[,c(2,4)], col=c("turquoise", "pink"), pch = 16)
+legend("topleft", title = "Species", legend = c("Male", "Female"), col = c("turquoise", "pink"), pch = 16)
+plot(crabs.pca$x[,c(2,5)], col=c("turquoise", "pink"), pch = 16)
+legend("topleft", title = "Species", legend = c("Male", "Female"), col = c("turquoise", "pink"), pch = 16)
+plot(crabs.pca$x[,c(3,4)], col=c("turquoise", "pink"), pch = 16)
+legend("topleft", title = "Species", legend = c("Male", "Female"), col = c("turquoise", "pink"), pch = 16)
+plot(crabs.pca$x[,c(3,5)], col=c("turquoise", "pink"), pch = 16)
+legend("topleft", title = "Species", legend = c("Male", "Female"), col = c("turquoise", "pink"), pch = 16)
+plot(crabs.pca$x[,c(4,5)], col=c("turquoise", "pink"), pch = 16)
+legend("topleft", title = "Species", legend = c("Male", "Female"), col = c("turquoise", "pink"), pch = 16)
+```
+Here we have the same situation as the PCAs by specie, we cannot see differences between groups, but in some plots there are groups of points clearly separated, so a 3d PCA plot is needed to see what is happening.
+##3d PCA
+
+``` {r crabs_3dPCA_byspecie, echo=FALSE, eval=FALSE}
+#PCA 3d
+#Change the levels to assign the colors we want to the two different groups
+levels(crabs.col) <- list("#225EA8"="Blue", "#EC7014"="Orange")
+levels(crabs.col1) <- list("turquoise"="Male", "pink"="Female")
+#3d PCA by specie
+library(scatterplot3d)
+library(rgl)
+matrixPCA <- cbind(crabs.pca$x[,1],crabs.pca$x[,2],crabs.pca$x[,3])
+pcaPlot <- plot3d(matrixPCA, main = "",pch = 1, type="s", radius = 0.15, xlab = "pc1", ylab = "pc2", zlab = "pc3", col = crabs.col)
+````
+image: ![](C:/Users/TOSHIBA/OneDrive/Documentos/Advanced Bachelor in Bioinformatics/ADVBABIT 08 Data analysis, visualization and biostatistics using R/Project/Captura1)  
+
+As the biggest variance is found in the first three principal components, we only need a 3d PCA plot including these ones.
+If we check the 3d plot, we can see that we were right, there are two groups clearly separated by specie. The blue spheres correspond to the blue specie and the orange ones to the orange specie.This is something that cannot be appreciated in a 2d plot.
+Now we are going to check the 3d PCA plot by gender.
+
+``` {r crabs_3dPCA_bygender, echo=FALSE, eval=FALSE}
+#3d PCA by gender
+matrixPCA <- cbind(crabs.pca$x[,1],crabs.pca$x[,2],crabs.pca$x[,3])
+pcaPlot <- plot3d(matrixPCA, main = "",pch = 1, type="s", radius = 0.15, xlab = "pc1", ylab = "pc2", zlab = "pc3", col = crabs.col1)
+```
+image: ![](C:/Users/TOSHIBA/OneDrive/Documentos/Advanced Bachelor in Bioinformatics/ADVBABIT 08 Data analysis, visualization and biostatistics using R/Project/Captura2)  
+
+Here we can see again two groups, the blue spheres corresponding to male crabs and the pink ones to female crabs. Also it is noticeable that within each group, another two groups of spheres, that probably correspond to the two species of crabs. The separation of groups is not that clear as in the last 3d plot but it is still valid, so this proves again that could be significant differences between genders and species and especially for the species if the differences are big enough, this could prove that orange crabs and blue crabs belong to different species.
+
+#Statistical analysis
+
+Once we have analized or data graphically, it is time to perform some statistical analysis to check if the asumptions we have made are correct or not. First, a null hypothesis and an alternative hypothesis are needed.
+The null hypothesis (that is the one commonly accepted) is that the blue and the orange leptograspus crabs belong to the same specie and there is any significant difference between species. As it is also useful to check if the variables sex and specie have a significant interaction between them, the best way to check it is through a two-way ANOVA test.
+##Two-way ANOVA
+###Front lobe size
+``` {r crabs_FL_ANOVA, echo=FALSE, eval=TRUE}
+#Boxplot Front lobe size vs specie to inspect data
+boxplot(FL ~ sp*sex, data=crabs, xlab="Specie*gender", ylab="Front lobe size (mm)", col=c("#225EA8", "#EC7014"))
+#lm function to fit one-way anova model and save it in an object
+crabs.model <- lm(FL ~ sp*sex , data=crabs)
+summary(crabs.model)
+#Perform the ANOVA test
+anova(crabs.model)
+#Confidence interval
+confint(crabs.model)
+```
+As we can see in the boxplot, there are some differences in the mean value between groups, but in order to be sure about this,we perform an ANOVA test.If we check the p-values, there are significant differences between species but not betweeen males and females. Also, it exists an interaction between specie and gender.
+
+
+###Rear width
+
+``` {r crabs_RW_ANOVA, echo=FALSE, eval=TRUE}
+#Boxplot Rear width vs specie to inspect data
+boxplot(RW ~ sp*sex, data=crabs, xlab="Specie*gender", ylab="Rear width (mm)", col=c("#225EA8", "#EC7014"))
+#lm function to fit one-way anova model and save it in an object
+crabs.model <- lm(RW ~ sp*sex, data=crabs)
+summary(crabs.model)
+#Perform the ANOVA test
+anova(crabs.model)
+#Confidence interval
+confint(crabs.model)
+```
+The boxplot shows a difference between means by specie but not so obvious as with the frontal lobe size. Checking the ANOVA results we can see that the differences are significant for both specie and gender groups, and the interaction between groups is also significant.
+
+###Carapace length
+
+``` {r crabs_CL_ANOVA, echo=FALSE, eval=TRUE}
+#Boxplot Carapace length vs specie to inspect data
+boxplot(CL ~ sp*sex, data=crabs, xlab="Specie*gender", ylab="Carapace length (mm)", col=c("#225EA8", "#EC7014"))
+#lm function to fit one-way anova model and save it in an object
+crabs.model <- lm(CL ~ sp*sex, data=crabs)
+summary(crabs.model)
+#Perform the ANOVA test
+anova(crabs.model)
+#Confidence interval
+confint(crabs.model)
+```
+As well as with the previous variables analyzed, carapace length shows differences by specie but not by gender, as expected regarding the previous analyses.This is shown in the boxplot and confirmed through the ANOVA test.The interaction between gender and specie is also significant.
+
+###Carapace width
+
+``` {r crabs_CW_ANOVA, echo=FALSE, eval=TRUE}
+#Boxplot Carapace width vs specie to inspect data
+boxplot(CW ~ sp*sex, data=crabs, xlab="Specie*gender", ylab="Carapace width (mm)", col=c("#225EA8", "#EC7014"))
+#lm function to fit one-way anova model and save it in an object
+crabs.model <- lm(CW ~ sp*sex, data=crabs)
+summary(crabs.model)
+#Perform the ANOVA test
+anova(crabs.model)
+#Confidence interval
+confint(crabs.model)
+```
+As expected, carapace width shows significant differences between blue and orange crabs but not between males and females. This is shown in the boxplot and confirmed through ANOVA testing. The interaction gender-specie is also significant.
+
+
+###Body depth
+
+``` {r crabs_BD_ANOVA, echo=FALSE, eval=TRUE}
+#Boxplot Body depth vs specie to inspect data
+boxplot(BD~ sp*sex, data=crabs, xlab="Specie*sex", ylab="Body depth (mm)", col=c("#225EA8", "#EC7014"))
+#lm function to fit one-way anova model and save it in an object
+crabs.model <- lm(BD ~ sp*sex, data=crabs)
+summary(crabs.model)
+#Perform the ANOVA test
+anova(crabs.model)
+#Confidence interval
+confint(crabs.model)
+```
+As shown in the boxplot and later confirmed through ANOVA test, differences in means are significant for the body depth regarding the specie of leptograspus crab, but not he gender.The interaction between gender and specie is also significant.
+
+
+In conclusion, all the variables in this dataset show significant differences between blue and orange species, so this supports the alternative hypothesis that blue crabs and orange crabs are different species of Leptograspus crab. Additionally, rear width shows significant differences by gender, supporting the theory that rear width could serve as an indicator to differentiate male and female crabs, as sown in the scatterplots previously. Also gender and specie show a significant correlation in all the variables studied, so this clearly needs futher analysis.
+
+##Matrix of correlations
+Previously, some scatterplots with regression lines were made, but we could not see the correlation coefficient to have a better idea about the correlation between variables.So in order to better understand the association between measurement variables, we decided to create a correlation matrix by specie and another one by gender.
+
+##By specie
+
+``` {r crabs_corr_byspecie, echo=FALSE, eval=TRUE}
+library("GGally")
+ggpairs(crabs, columns=5:9, ggplot2::aes(color=crabs$sp)) + scale_fill_manual(values=c("#225EA8","#EC7014")) + scale_color_manual(values = c("Blue" = "#225EA8","Orange"="#EC7014")) + ggtitle("Matrix of correlations by specie")+theme(plot.title=element_text(hjust=0.5))
+```
+This matrix of correlations show that all the variables are positive correlated between them, as we can tell if we look at the scatterplots. All the correlation coefficients are close to 1, meaning that tit exists a strong positive correlation between the different measurements.
+
+###By gender
+
+``` {r crabs_corr_bygender, echo=FALSE, eval=TRUE}
+ggpairs(crabs, columns=5:9, ggplot2::aes(color=crabs$sex)) + scale_fill_manual(values=c("turquoise","pink")) + scale_color_manual(values = c("Male" = "turquoise","Female"="pink")) + ggtitle("Matrix of correlations by gender")+theme(plot.title=element_text(hjust=0.5)) 
+```
+Similarly to the correlations by specie, all the correlations between variables by gender are positive and significant as we can see from the scatterplots and correlation coefficients close to 1.
+If we pay attention to the scatterplots for both specie and gender, some of them have a good homocedasticity but some others do not, so a Barlett's test has been performed to check this.
+
+##Barlett's test
+The null hypothesis here is that variance is the same for all groups.
+
+``` {r crabs_barlett, echo=FALSE, eval=TRUE}
+bartlett.test(FL~sp, crabs)
+bartlett.test(RW~sp, crabs)
+bartlett.test(CL~sp, crabs)
+bartlett.test(CW~sp, crabs)
+bartlett.test(BD~sp, crabs)
+bartlett.test(FL~sex, crabs)
+bartlett.test(RW~sex, crabs)
+bartlett.test(CL~sex, crabs)
+bartlett.test(CW~sex, crabs)
+bartlett.test(BD~sex, crabs)
+```
+
+All the p-values of all the Barlett's tests performed are greater than 0.05, so this means that there is no evidence that the variance in the different measurement variables is different between the two species or between the two genders, so we have a high homocedasticity and this strengthen the conclusions made about the dataset.
+
+##Conclusions
+If we resume the data from all the analysis performed, we can say that:
+-Carapace length and width show differences by specie. This has been seen first in the pairwise comparison of variables. Also, the main contribution to the first principal component (that is the one that accounted for more than 98% of the total variation for each group), is carapace length, followed by carapace width and front lobe size and the 3d PCA between PC1, PC2 and PC3 showed two different groups, one for blue crabs and the other one for orange crabs.Additionally, the two-way ANOVA test showed significant differences for all the varieties tested
+-The pairwise comparison of variables also showed differences between genders for rear width, that have been also seen in the 3d PCA plot, where PC1, PC2 and PC3 formed two groups, one for male crabs and the other one for females. This evidence has been confirmed through ANOVA testing.
+-We found positive and significant correlation between all the variables in this dataset.
+-Variance is the same in all groups tested, confirmed through a Barlett's test.
+
+All of these results and previous investigations show good evidence that blue and orange leptograspus crabs are in fact two different species and we could use the color and carapace dimensions to identify them.
+
+
+
+
+
+
+
+
